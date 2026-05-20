@@ -773,7 +773,8 @@ impl DockerProcessHandle {
         let stats_server = server.clone();
 
         let stats_task = tokio::spawn(async move {
-            let mut prev_cpu = (0, 0);
+            let mut prev_cpu_total: u64 = 0;
+            let mut prev_instant: Option<std::time::Instant> = None;
 
             let mut stream = stats_docker.stats(
                 &stats_id,
@@ -823,32 +824,24 @@ impl DockerProcessHandle {
                 if let Some(cpu_stats) = &stats.cpu_stats
                     && let Some(cpu_usage) = &cpu_stats.cpu_usage
                 {
-                    usage.cpu_absolute = {
-                        let cpu_delta = cpu_usage
-                            .total_usage
-                            .unwrap_or(0)
-                            .saturating_sub(prev_cpu.0)
-                            as f64;
-                        let sys_delta = cpu_stats
-                            .system_cpu_usage
-                            .unwrap_or(0)
-                            .saturating_sub(prev_cpu.1)
-                            as f64;
-                        let cpus = cpu_stats.online_cpus.unwrap_or_else(|| {
-                            cpu_usage.percpu_usage.as_deref().unwrap_or(&[]).len() as u32
-                        }) as f64;
+                    let total_usage = cpu_usage.total_usage.unwrap_or(0);
+                    let now = std::time::Instant::now();
 
-                        if sys_delta > 0.0 && cpu_delta > 0.0 && cpus > 0.0 {
-                            ((cpu_delta / sys_delta) * 100.0 * cpus * 1000.0).round() / 1000.0
+                    usage.cpu_absolute = if let Some(prev) = prev_instant {
+                        let cpu_delta_ns = total_usage.saturating_sub(prev_cpu_total) as f64;
+                        let wall_delta_ns = now.duration_since(prev).as_nanos() as f64;
+
+                        if wall_delta_ns > 0.0 && cpu_delta_ns > 0.0 {
+                            ((cpu_delta_ns / wall_delta_ns) * 100.0 * 1000.0).round() / 1000.0
                         } else {
                             0.0
                         }
+                    } else {
+                        0.0
                     };
 
-                    prev_cpu = (
-                        cpu_usage.total_usage.unwrap_or(0),
-                        cpu_stats.system_cpu_usage.unwrap_or(0),
-                    );
+                    prev_cpu_total = total_usage;
+                    prev_instant = Some(now);
                 }
             }
         });
