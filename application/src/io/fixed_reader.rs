@@ -1,4 +1,9 @@
-use std::io::Read;
+use std::{
+    io::Read,
+    pin::Pin,
+    task::{Context, Poll},
+};
+use tokio::io::{AsyncRead, ReadBuf};
 
 pub struct FixedReader<R: Read> {
     inner: R,
@@ -36,5 +41,62 @@ impl<R: Read> Read for FixedReader<R> {
 
         self.bytes_read += n;
         Ok(n)
+    }
+}
+
+pub struct AsyncFixedReader<R: AsyncRead + Unpin> {
+    inner: R,
+    size: usize,
+    bytes_read: usize,
+}
+
+impl<R: AsyncRead + Unpin> AsyncFixedReader<R> {
+    pub fn new_with_fixed_bytes(inner: R, size: usize) -> Self {
+        Self {
+            inner,
+            size,
+            bytes_read: 0,
+        }
+    }
+}
+
+impl<R: AsyncRead + Unpin> AsyncRead for AsyncFixedReader<R> {
+    fn poll_read(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        buf: &mut ReadBuf<'_>,
+    ) -> Poll<std::io::Result<()>> {
+        if self.bytes_read >= self.size {
+            return Poll::Ready(Ok(()));
+        }
+
+        let remaining = self.size - self.bytes_read;
+        let to_read = std::cmp::min(buf.remaining(), remaining);
+
+        if to_read == 0 {
+            return Poll::Ready(Ok(()));
+        }
+
+        let mut sub_buf = buf.take(to_read);
+        let filled_before = sub_buf.filled().len();
+
+        match Pin::new(&mut self.inner).poll_read(cx, &mut sub_buf) {
+            Poll::Ready(Ok(())) => {
+                let n = sub_buf.filled().len() - filled_before;
+
+                if crate::unlikely(n == 0) {
+                    buf.initialize_unfilled_to(to_read)[..to_read].fill(0);
+                    buf.advance(to_read);
+                    self.bytes_read += to_read;
+                    Poll::Ready(Ok(()))
+                } else {
+                    buf.advance(n);
+                    self.bytes_read += n;
+                    Poll::Ready(Ok(()))
+                }
+            }
+            Poll::Ready(Err(e)) => Poll::Ready(Err(e)),
+            Poll::Pending => Poll::Pending,
+        }
     }
 }
