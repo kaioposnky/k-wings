@@ -7,7 +7,7 @@ use utoipa::ToSchema;
 pub mod process;
 pub mod seccomp;
 
-#[derive(ToSchema, Deserialize, Serialize, Clone)]
+#[derive(ToSchema, Deserialize, Serialize, Clone, PartialEq, Eq)]
 pub struct Mount {
     #[serde(skip_deserializing, default)]
     pub default: bool,
@@ -62,11 +62,11 @@ nestify::nest! {
         pub schedules: Vec<Schedule>,
 
         #[schema(inline)]
-        pub allocations: #[derive(ToSchema, Deserialize, Serialize)] pub struct ServerConfigurationAllocations {
+        pub allocations: #[derive(ToSchema, Deserialize, Serialize, PartialEq, Eq)] pub struct ServerConfigurationAllocations {
             pub force_outgoing_ip: bool,
 
             #[schema(inline)]
-            pub default: Option<#[derive(ToSchema, Deserialize, Serialize)] pub struct ServerConfigurationAllocationsDefault {
+            pub default: Option<#[derive(ToSchema, Deserialize, Serialize, PartialEq, Eq)] pub struct ServerConfigurationAllocationsDefault {
                 pub ip: compact_str::CompactString,
                 pub port: u16,
             }>,
@@ -95,7 +95,7 @@ nestify::nest! {
         },
 
         #[schema(inline)]
-        pub container: #[derive(ToSchema, Deserialize, Serialize)] pub struct ServerConfigurationContainer {
+        pub container: #[derive(ToSchema, Deserialize, Serialize, PartialEq, Eq)] pub struct ServerConfigurationContainer {
             pub image: compact_str::CompactString,
             pub timezone: Option<compact_str::CompactString>,
 
@@ -106,7 +106,7 @@ nestify::nest! {
 
             #[serde(default)]
             #[schema(inline)]
-            pub seccomp: #[derive(ToSchema, Deserialize, Serialize, DefaultFromSerde)] pub struct ServerConfigurationContainerSeccomp {
+            pub seccomp: #[derive(ToSchema, Deserialize, Serialize, DefaultFromSerde, PartialEq, Eq)] pub struct ServerConfigurationContainerSeccomp {
                 #[serde(default)]
                 pub remove_allowed: Vec<compact_str::CompactString>,
             },
@@ -123,6 +123,17 @@ nestify::nest! {
 
         #[serde(default)]
         pub auto_start_behavior: crate::models::ServerAutoStartBehavior,
+    }
+}
+
+impl ServerConfigurationBuild {
+    pub fn has_pending_restart(&self, other: &Self) -> bool {
+        self.memory_limit != other.memory_limit
+            || self.overhead_memory != other.overhead_memory
+            || self.swap != other.swap
+            || self.io_weight != other.io_weight
+            || self.threads != other.threads
+            || self.oom_disabled != other.oom_disabled
     }
 }
 

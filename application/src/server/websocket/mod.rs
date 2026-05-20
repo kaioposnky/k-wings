@@ -72,6 +72,8 @@ pub enum WebsocketEvent {
     ServerStats,
     #[serde(rename = "status")]
     ServerStatus,
+    #[serde(rename = "pending restart")]
+    ServerPendingRestart,
     #[serde(rename = "custom event")]
     ServerCustomEvent,
     #[serde(rename = "console output")]

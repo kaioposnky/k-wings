@@ -61,6 +61,12 @@ pub async fn handle_message(
                     [serde_json::to_string(&server.resource_usage().await)?.into()].into(),
                 ))
                 .await;
+            websocket_handler
+                .send_message(WebsocketMessage::new(
+                    WebsocketEvent::ServerPendingRestart,
+                    [server.state.get_pending_restart().to_compact_string()].into(),
+                ))
+                .await;
         }
         WebsocketEvent::SendStatus => {
             websocket_handler

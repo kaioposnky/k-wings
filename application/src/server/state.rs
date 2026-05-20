@@ -1,3 +1,4 @@
+use compact_str::ToCompactString;
 use serde::{Deserialize, Serialize};
 use std::sync::{
     Arc,
@@ -32,6 +33,7 @@ impl ServerState {
 pub struct ServerStateLock {
     state: AtomicU8,
     locked: AtomicBool,
+    pending_restart: AtomicBool,
     sender: tokio::sync::broadcast::Sender<super::websocket::WebsocketMessage>,
     schedule_manager: Arc<super::schedule::manager::ScheduleManager>,
 }
@@ -44,6 +46,7 @@ impl ServerStateLock {
         Self {
             state: AtomicU8::new(0),
             locked: AtomicBool::new(false),
+            pending_restart: AtomicBool::new(false),
             sender,
             schedule_manager,
         }
@@ -66,6 +69,23 @@ impl ServerStateLock {
                 [state.to_str().into()].into(),
             ))
             .unwrap_or_default();
+        if state == ServerState::Offline && self.get_pending_restart() {
+            self.set_pending_restart(false);
+        }
+    }
+
+    pub fn set_pending_restart(&self, pending: bool) {
+        if pending && (self.get_pending_restart() || self.get_state() == ServerState::Offline) {
+            return;
+        }
+
+        self.pending_restart.store(pending, Ordering::Relaxed);
+        self.sender
+            .send(super::websocket::WebsocketMessage::new(
+                super::websocket::WebsocketEvent::ServerPendingRestart,
+                [pending.to_compact_string()].into(),
+            ))
+            .ok();
     }
 
     #[inline]
@@ -77,6 +97,11 @@ impl ServerStateLock {
             3 => ServerState::Running,
             _ => ServerState::Offline,
         }
+    }
+
+    #[inline]
+    pub fn get_pending_restart(&self) -> bool {
+        self.pending_restart.load(Ordering::Relaxed)
     }
 
     /// Executes an action with the server state locked.

@@ -604,7 +604,24 @@ impl Server {
             .await;
         self.suspended
             .store(configuration.suspended, Ordering::SeqCst);
-        *self.configuration.write().await = configuration;
+        {
+            let mut configuration_lock = self.configuration.write().await;
+            let old_configuration = std::mem::replace(&mut *configuration_lock, configuration);
+
+            if !self.state.get_pending_restart()
+                && (old_configuration.invocation != configuration_lock.invocation
+                    || old_configuration.entrypoint != configuration_lock.entrypoint
+                    || old_configuration.environment != configuration_lock.environment
+                    || old_configuration.allocations != configuration_lock.allocations
+                    || old_configuration.mounts != configuration_lock.mounts
+                    || old_configuration.container != configuration_lock.container
+                    || old_configuration
+                        .build
+                        .has_pending_restart(&configuration_lock.build))
+            {
+                self.state.set_pending_restart(true);
+            }
+        }
         *self.process_configuration.write().await = process_configuration;
         self.schedules.update_schedules(self.clone()).await;
 
@@ -1327,6 +1344,10 @@ impl Server {
             async move {
                 server.diff.destroy().await;
                 server.filesystem.destroy().await;
+
+                if let Some(installer) = server.installer.read().await.as_ref() {
+                    installer.abort();
+                }
             }
         });
     }
