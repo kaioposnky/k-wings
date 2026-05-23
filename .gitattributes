@@ -1,0 +1,25 @@
+# Normalize line endings to LF on commit, checkout as LF
+* text=auto
+
+# Enforce LF for specific file types that should always use LF
+*.sh text eol=lf
+*.bash text eol=lf
+*.zsh text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf
+*.toml text eol=lf
+*.rs text eol=lf
+*.md text eol=lf
+Dockerfile text eol=lf
+
+# Binary files - do not transform
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.bin binary
+*.so binary
+*.dll binary
+*.exe binary
