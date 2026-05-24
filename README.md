@@ -1,20 +1,23 @@
-![Calagopus Logo](https://calagopus.com/fulllogo.svg)
+# k-wings
 
-# Calagopus Wings
+a fork of [Calagopus Wings](https://github.com/calagopus/wings) with added support for **Bedrock Edition** game server management. this fork extends the wings-rs rewrite of [pterodactyl wings](https://github.com/pterodactyl/wings) to be 100% API compatible while adding bedrock-specific features for managing Minecraft Bedrock packs, experiments, and world data.
 
-[![Rust](https://img.shields.io/badge/rust-stable-orange.svg?logo=rust)](https://www.rust-lang.org/)
-[![License](https://img.shields.io/github/license/calagopus/wings?color=blue)](https://github.com/calagopus/wings/blob/main/LICENSE)
-[![GitHub issues](https://img.shields.io/github/issues/calagopus/wings)](https://github.com/calagopus/wings/issues)
-[![GitHub stars](https://img.shields.io/github/stars/calagopus/wings)](https://github.com/calagopus/wings/stargazers)
-[![Discord](https://img.shields.io/discord/1429911351777824892?label=discord&logo=discord&color=5865F2)](https://discord.gg/uSM8tvTxBV)
+## bedrock features
 
-A rewrite of [Pterodactyl Wings](https://github.com/pterodactyl/wings) in the Rust programming language. This rewrite aims to be 100% API compatible while implementing new features and better performance.
+- **NBT Level Data** — custom little-endian NBT parser for reading/writing Bedrock `level.dat` files
+- **Package Management** — install, delete, and reorder behavior/resource packs
+- **World Data** — manage world settings, education features, and version tracking
+- **Experiments** — toggle Bedrock education experiments and features
+- **Pack Ordering** — drag-and-drop pack reordering with persistent world configuration
 
 [Todo](https://notes.rjns.dev/workspace/cb7ccae8-0508-4f90-9161-d1e69b0ca8f0/uAVAL7iHSQpDk1SiSUPL1)
 
 ## Installation
 
-For installation instructions, please refer to the [Docs](https://calagopus.com/docs/wings/installation).
+```bash
+sudo curl -L "https://github.com/kaioposnky/k-wings/releases/latest/download/wings-rs-$(uname -m)-linux" -o /usr/local/bin/wings
+sudo chmod +x /usr/local/bin/wings
+```
 
 ## Added Config Options
 
@@ -205,7 +208,33 @@ remote_query:
 ignore_panel_wings_upgrades: false
 ```
 
+<<<<<<< HEAD
 ## Added Features
+=======
+## bedrock api endpoints
+
+All Bedrock endpoints are located under `/api/servers/{server_id}/bedrock/`:
+
+**Packages:**
+- `GET /packages/list` — list installed behavior/resource packs
+- `POST /packages/install` — install a package from URL or file
+- `POST /packages/delete` — remove a package
+- `POST /packages/reorder` — reorder packages (drag-and-drop support)
+
+**World Data:**
+- `GET /world/version` — get world format version
+- `GET /world/data` — retrieve world NBT data
+
+**Experiments:**
+- `GET /experiments/list` — list Bedrock experiments
+- `POST /experiments/update` — toggle experiments
+
+**Education Features:**
+- `GET /education/status` — check education mode status
+- `POST /education/toggle` — enable/disable education features
+
+## added features
+>>>>>>> 0701ab3 (docs: update README for Bedrock fork and features)
 
 ### API
 
