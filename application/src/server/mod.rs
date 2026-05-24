@@ -12,6 +12,7 @@ use tokio::sync::{Mutex, RwLock};
 
 pub mod activity;
 pub mod backup;
+pub mod bedrock;
 pub mod configuration;
 pub mod diff;
 pub mod executor;
