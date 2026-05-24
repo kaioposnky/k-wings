@@ -10,6 +10,7 @@ use axum::{
 use utoipa_axum::{router::OpenApiRouter, routes};
 
 mod backup;
+mod bedrock;
 mod commands;
 mod files;
 mod install;
@@ -123,6 +124,7 @@ pub fn router(state: &State) -> OpenApiRouter<State> {
         .nest("/files", files::router(state))
         .nest("/backup", backup::router(state))
         .nest("/schedules", schedules::router(state))
+        .nest("/bedrock", bedrock::router(state))
         .routes(routes!(get::route))
         .routes(routes!(delete::route))
         .route_layer(axum::middleware::from_fn_with_state(state.clone(), auth))
