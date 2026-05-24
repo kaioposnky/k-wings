@@ -16,6 +16,7 @@ pub mod post {
         #[serde(default)]
         download_url: Option<String>,
         #[serde(default)]
+        #[allow(dead_code)]
         file_names: Option<Vec<String>>,
     }
 
