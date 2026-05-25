@@ -176,7 +176,6 @@ pub async fn create_itaf<W: Write + Send + 'static>(
                 };
                 let reader =
                     FixedReader::new_with_fixed_bytes(reader, source_metadata.len() as usize);
-                let reader = std::io::BufReader::with_capacity(crate::BUFFER_SIZE, reader);
 
                 archive.add_file(&name, &meta, source_metadata.len(), &mut { reader })?;
 
@@ -295,7 +294,6 @@ pub async fn create_itaf_distributed<W: Write + Send + 'static>(
                     None => Box::new(file),
                 };
                 let reader = FixedReader::new_with_fixed_bytes(reader, metadata.len() as usize);
-                let reader = std::io::BufReader::with_capacity(crate::TRANSFER_BUFFER_SIZE, reader);
 
                 archive.add_file(name, &meta, metadata.len(), &mut { reader })?;
             } else if let Ok(link_target) = filesystem.read_link_contents(&full) {

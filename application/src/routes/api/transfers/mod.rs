@@ -565,6 +565,17 @@ mod post {
 
                                 match field.content_type() {
                                     Some("backup/wings") => {
+                                        if file_name.contains("..")
+                                            || file_name.contains('/')
+                                            || file_name.contains('\\')
+                                        {
+                                            tracing::warn!(
+                                                "invalid backup file name: {}",
+                                                file_name
+                                            );
+                                            continue;
+                                        }
+
                                         let file_name =
                                             Path::new(&state.config.load().system.backup_directory)
                                                 .join(file_name);

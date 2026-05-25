@@ -407,7 +407,10 @@ pub async fn handle_extended(
                             break;
                         }
 
-                        path.pop();
+                        if !path.pop() {
+                            disk = None;
+                            break;
+                        }
                     }
 
                     let total_space = disk
@@ -491,7 +494,10 @@ pub async fn handle_extended(
                             break;
                         }
 
-                        path.pop();
+                        if !path.pop() {
+                            disk = None;
+                            break;
+                        }
                     }
 
                     let total_space = disk

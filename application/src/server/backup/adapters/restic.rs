@@ -734,21 +734,23 @@ impl BackupExt for ResticBackup {
 
         match archive_format {
             StreamableArchiveFormat::Zip => {
-                let child = std::process::Command::new("restic")
-                    .envs(&self.configuration.environment)
-                    .arg("--json")
-                    .arg("--no-lock")
-                    .arg("--repo")
-                    .arg(&self.configuration.repository)
-                    .args(self.configuration.password())
-                    .arg("--cache-dir")
-                    .arg(get_restic_cache_dir(&state.config))
-                    .arg("dump")
-                    .arg(format!("{}:{}", self.short_id, self.server_path.display()))
-                    .arg("/")
-                    .stdout(std::process::Stdio::piped())
-                    .stderr(std::process::Stdio::null())
-                    .spawn()?;
+                let child = tokio::task::block_in_place(|| {
+                    std::process::Command::new("restic")
+                        .envs(&self.configuration.environment)
+                        .arg("--json")
+                        .arg("--no-lock")
+                        .arg("--repo")
+                        .arg(&self.configuration.repository)
+                        .args(self.configuration.password())
+                        .arg("--cache-dir")
+                        .arg(get_restic_cache_dir(&state.config))
+                        .arg("dump")
+                        .arg(format!("{}:{}", self.short_id, self.server_path.display()))
+                        .arg("/")
+                        .stdout(std::process::Stdio::piped())
+                        .stderr(std::process::Stdio::null())
+                        .spawn()
+                })?;
 
                 crate::spawn_blocking_handled(move || -> Result<(), anyhow::Error> {
                     let writer = tokio_util::io::SyncIoBridge::new(writer);
@@ -803,21 +805,23 @@ impl BackupExt for ResticBackup {
                 });
             }
             f if f.is_tar() => {
-                let child = std::process::Command::new("restic")
-                    .envs(&self.configuration.environment)
-                    .arg("--json")
-                    .arg("--no-lock")
-                    .arg("--repo")
-                    .arg(&self.configuration.repository)
-                    .args(self.configuration.password())
-                    .arg("--cache-dir")
-                    .arg(get_restic_cache_dir(&self.config))
-                    .arg("dump")
-                    .arg(format!("{}:{}", self.short_id, self.server_path.display()))
-                    .arg("/")
-                    .stdout(std::process::Stdio::piped())
-                    .stderr(std::process::Stdio::null())
-                    .spawn()?;
+                let child = tokio::task::block_in_place(|| {
+                    std::process::Command::new("restic")
+                        .envs(&self.configuration.environment)
+                        .arg("--json")
+                        .arg("--no-lock")
+                        .arg("--repo")
+                        .arg(&self.configuration.repository)
+                        .args(self.configuration.password())
+                        .arg("--cache-dir")
+                        .arg(get_restic_cache_dir(&self.config))
+                        .arg("dump")
+                        .arg(format!("{}:{}", self.short_id, self.server_path.display()))
+                        .arg("/")
+                        .stdout(std::process::Stdio::piped())
+                        .stderr(std::process::Stdio::null())
+                        .spawn()
+                })?;
 
                 let file_compression_threads = self.config.load().api.file_compression_threads;
                 crate::spawn_blocking_handled(move || -> Result<(), anyhow::Error> {
@@ -843,21 +847,23 @@ impl BackupExt for ResticBackup {
                 });
             }
             f if f.is_itaf() => {
-                let child = std::process::Command::new("restic")
-                    .envs(&self.configuration.environment)
-                    .arg("--json")
-                    .arg("--no-lock")
-                    .arg("--repo")
-                    .arg(&self.configuration.repository)
-                    .args(self.configuration.password())
-                    .arg("--cache-dir")
-                    .arg(get_restic_cache_dir(&self.config))
-                    .arg("dump")
-                    .arg(format!("{}:{}", self.short_id, self.server_path.display()))
-                    .arg("/")
-                    .stdout(std::process::Stdio::piped())
-                    .stderr(std::process::Stdio::null())
-                    .spawn()?;
+                let child = tokio::task::block_in_place(|| {
+                    std::process::Command::new("restic")
+                        .envs(&self.configuration.environment)
+                        .arg("--json")
+                        .arg("--no-lock")
+                        .arg("--repo")
+                        .arg(&self.configuration.repository)
+                        .args(self.configuration.password())
+                        .arg("--cache-dir")
+                        .arg(get_restic_cache_dir(&self.config))
+                        .arg("dump")
+                        .arg(format!("{}:{}", self.short_id, self.server_path.display()))
+                        .arg("/")
+                        .stdout(std::process::Stdio::piped())
+                        .stderr(std::process::Stdio::null())
+                        .spawn()
+                })?;
 
                 let file_compression_threads = self.config.load().api.file_compression_threads;
                 crate::spawn_blocking_handled(move || -> Result<(), anyhow::Error> {
@@ -1557,21 +1563,23 @@ impl VirtualReadableFilesystem for VirtualResticBackup {
                         let full_path = server_path.join(&entry_path);
 
                         if file_type.is_dir() {
-                            let child = std::process::Command::new("restic")
-                                .envs(&configuration.environment)
-                                .arg("--json")
-                                .arg("--no-lock")
-                                .arg("--repo")
-                                .arg(&configuration.repository)
-                                .args(configuration.password())
-                                .arg("--cache-dir")
-                                .arg(get_restic_cache_dir(&config))
-                                .arg("dump")
-                                .arg(format!("{}:{}", short_id, full_path.display()))
-                                .arg("/")
-                                .stdout(std::process::Stdio::piped())
-                                .stderr(std::process::Stdio::null())
-                                .spawn()?;
+                            let child = tokio::task::block_in_place(|| {
+                                std::process::Command::new("restic")
+                                    .envs(&configuration.environment)
+                                    .arg("--json")
+                                    .arg("--no-lock")
+                                    .arg("--repo")
+                                    .arg(&configuration.repository)
+                                    .args(configuration.password())
+                                    .arg("--cache-dir")
+                                    .arg(get_restic_cache_dir(&config))
+                                    .arg("dump")
+                                    .arg(format!("{}:{}", short_id, full_path.display()))
+                                    .arg("/")
+                                    .stdout(std::process::Stdio::piped())
+                                    .stderr(std::process::Stdio::null())
+                                    .spawn()
+                            })?;
 
                             let stdout = child.stdout.unwrap();
 

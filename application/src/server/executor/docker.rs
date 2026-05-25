@@ -1,3 +1,4 @@
+use bollard::errors::Error::DockerResponseServerError;
 use futures::StreamExt;
 use rand::distr::SampleString;
 use std::{
@@ -875,10 +876,20 @@ impl DockerProcessHandle {
             loop {
                 tokio::time::sleep(std::time::Duration::from_secs(1)).await;
 
-                let inspect = state_docker
-                    .inspect_container(&state_id, None)
-                    .await
-                    .unwrap_or_default();
+                let inspect = match state_docker.inspect_container(&state_id, None).await {
+                    Ok(inspect) => inspect,
+                    Err(DockerResponseServerError {
+                        status_code: 404, ..
+                    }) => Default::default(),
+                    Err(err) => {
+                        tracing::warn!(
+                            server = %state_id,
+                            "failed to inspect container for state: {:?}",
+                            err
+                        );
+                        continue;
+                    }
+                };
                 let state = inspect.state.unwrap_or_default();
 
                 let process_status = match state.status {

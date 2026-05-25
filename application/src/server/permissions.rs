@@ -66,11 +66,6 @@ impl Permission {
                 | Permission::AdminWebsocketTransfer
         )
     }
-
-    #[inline]
-    pub fn matches(self, other: Permission) -> bool {
-        self == other || (other == Permission::All && !other.is_admin())
-    }
 }
 
 type UserPermissions = (
@@ -113,9 +108,11 @@ impl UserPermissionsMap {
     pub async fn wait_for_removal(&self, user_uuid: uuid::Uuid) {
         let mut receiver = self.removal_sender.subscribe();
 
-        while let Ok(uuid) = receiver.recv().await {
-            if uuid == user_uuid {
-                break;
+        loop {
+            match receiver.recv().await {
+                Ok(uuid) if uuid == user_uuid => break,
+                Err(tokio::sync::broadcast::error::RecvError::Closed) => break,
+                _ => {}
             }
         }
     }
@@ -234,10 +231,10 @@ impl Permissions {
 
     #[inline]
     pub fn has_permission(&self, permission: Permission) -> bool {
-        for p in self.0.iter().copied() {
-            if permission.matches(p) {
-                return true;
-            }
+        if (self.0.contains(&Permission::All) && !permission.is_admin())
+            || self.0.contains(&permission)
+        {
+            return true;
         }
 
         false
