@@ -284,10 +284,11 @@ impl Schedule {
 
                 server
                     .websocket
-                    .send(WebsocketMessage::new(
-                        WebsocketEvent::ServerScheduleStarted,
-                        [uuid.to_compact_string()].into(),
-                    ))
+                    .send(
+                        WebsocketMessage::builder(WebsocketEvent::ServerScheduleStarted)
+                            .arg(uuid.to_compact_string())
+                            .build(),
+                    )
                     .ok();
 
                 for raw_action in raw_actions.iter() {
@@ -298,14 +299,12 @@ impl Schedule {
 
                     server
                         .websocket
-                        .send(WebsocketMessage::new(
-                            WebsocketEvent::ServerScheduleStepStatus,
-                            [
-                                uuid.to_compact_string(),
-                                raw_action.uuid.to_compact_string(),
-                            ]
-                            .into(),
-                        ))
+                        .send(
+                            WebsocketMessage::builder(WebsocketEvent::ServerScheduleStepStatus)
+                                .arg(uuid.to_compact_string())
+                                .arg(raw_action.uuid.to_compact_string())
+                                .build(),
+                        )
                         .ok();
 
                     match raw_action
@@ -324,15 +323,15 @@ impl Schedule {
 
                             server
                                 .websocket
-                                .send(WebsocketMessage::new(
-                                    WebsocketEvent::ServerScheduleStepError,
-                                    [
-                                        uuid.to_compact_string(),
-                                        raw_action.uuid.to_compact_string(),
-                                        err.to_compact_string(),
-                                    ]
-                                    .into(),
-                                ))
+                                .send(
+                                    WebsocketMessage::builder(
+                                        WebsocketEvent::ServerScheduleStepError,
+                                    )
+                                    .arg(uuid.to_compact_string())
+                                    .arg(raw_action.uuid.to_compact_string())
+                                    .arg(err.to_compact_string())
+                                    .build(),
+                                )
                                 .ok();
 
                             if !raw_action.action.ignore_failure() {
@@ -352,10 +351,11 @@ impl Schedule {
 
                 server
                     .websocket
-                    .send(WebsocketMessage::new(
-                        WebsocketEvent::ServerScheduleCompleted,
-                        [uuid.to_compact_string()].into(),
-                    ))
+                    .send(
+                        WebsocketMessage::builder(WebsocketEvent::ServerScheduleCompleted)
+                            .arg(uuid.to_compact_string())
+                            .build(),
+                    )
                     .ok();
 
                 *completion_status.lock().await = Some(ApiScheduleCompletionStatus {

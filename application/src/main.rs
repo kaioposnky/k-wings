@@ -222,8 +222,13 @@ async fn main_rt() {
     let mut cli = crate::commands::commands(cli);
     let mut matches = cli.get_matches();
 
-    let config_path = matches.get_one::<String>("config").unwrap().clone();
-    let debug = *matches.get_one::<bool>("debug").unwrap();
+    let config_path = matches
+        .get_one::<String>("config")
+        .expect("config path is required")
+        .clone();
+    let debug = *matches
+        .get_one::<bool>("debug")
+        .expect("debug flag is required");
     let ignore_certificate_errors = matches
         .get_one::<bool>("ignore_certificate_errors")
         .copied()
@@ -592,8 +597,10 @@ async fn main_rt() {
 
     #[cfg(unix)]
     tokio::spawn(async move {
-        let mut signal =
-            tokio::signal::unix::signal(tokio::signal::unix::SignalKind::hangup()).unwrap();
+        let Ok(mut signal) = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::hangup())
+        else {
+            return;
+        };
 
         loop {
             signal.recv().await;

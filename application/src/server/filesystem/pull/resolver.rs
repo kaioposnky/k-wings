@@ -14,12 +14,13 @@ pub struct DnsResolver {
 
 impl DnsResolver {
     pub fn new(config: &Arc<crate::config::Config>) -> Self {
-        let mut builder = TokioResolver::builder_tokio().unwrap();
+        let mut builder =
+            TokioResolver::builder_tokio().expect("failed to create TokioResolver builder");
         builder.options_mut().ip_strategy = LookupIpStrategy::Ipv4AndIpv6;
 
         Self {
             config: Arc::clone(config),
-            state: Arc::new(builder.build().unwrap()),
+            state: Arc::new(builder.build().expect("failed to build TokioResolver")),
         }
     }
 }

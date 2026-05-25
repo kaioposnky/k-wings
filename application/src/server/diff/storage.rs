@@ -363,7 +363,10 @@ impl Storage {
         if (chains.len() as u64) < keep_chains {
             return Ok(0);
         }
-        let min_keep = *chains.last().unwrap();
+        let Some(&min_keep) = chains.last() else {
+            return Ok(0);
+        };
+
         let n = self.conn.execute(
             "DELETE FROM revisions WHERE file_id = ? AND chain_id < ?",
             params![file_id, min_keep],

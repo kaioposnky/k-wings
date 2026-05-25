@@ -84,10 +84,9 @@ pub async fn handle_jwt(
 
                         if jwt.permissions.has_permission(Permission::WebsocketConnect) {
                             websocket_handler
-                                .send_message(WebsocketMessage::new(
-                                    WebsocketEvent::TokenExpired,
-                                    [].into(),
-                                ))
+                                .send_message(
+                                    WebsocketMessage::builder(WebsocketEvent::TokenExpired).build(),
+                                )
                                 .await;
 
                             return Err(JwtError::Expired);
@@ -102,10 +101,11 @@ pub async fn handle_jwt(
                     }
 
                     websocket_handler
-                        .send_message(WebsocketMessage::new(
-                            WebsocketEvent::AuthenticationSuccess,
-                            permissions.into(),
-                        ))
+                        .send_message(
+                            WebsocketMessage::builder(WebsocketEvent::AuthenticationSuccess)
+                                .args(permissions)
+                                .build(),
+                        )
                         .await;
 
                     let has_console_read = jwt
@@ -128,10 +128,11 @@ pub async fn handle_jwt(
                         .is_none()
                     {
                         websocket_handler
-                            .send_message(WebsocketMessage::new(
-                                WebsocketEvent::ServerStatus,
-                                [server.state.get_state().to_str().into()].into(),
-                            ))
+                            .send_message(
+                                WebsocketMessage::builder(WebsocketEvent::ServerStatus)
+                                    .arg(server.state.get_state().to_str())
+                                    .build(),
+                            )
                             .await;
 
                         if !has_console_read {
@@ -196,10 +197,9 @@ pub async fn listen_jwt(websocket_handler: &ServerWebsocketHandler) {
             if let Some(expiration) = jwt.base.expiration_time {
                 if expiration < chrono::Utc::now().timestamp() {
                     websocket_handler
-                        .send_message(WebsocketMessage::new(
-                            WebsocketEvent::TokenExpired,
-                            [].into(),
-                        ))
+                        .send_message(
+                            WebsocketMessage::builder(WebsocketEvent::TokenExpired).build(),
+                        )
                         .await;
 
                     drop(socket_jwt_guard);
@@ -208,10 +208,9 @@ pub async fn listen_jwt(websocket_handler: &ServerWebsocketHandler) {
                     tracing::debug!("jwt expired for websocket connection, removing jwt");
                 } else if expiration - 60 < chrono::Utc::now().timestamp() {
                     websocket_handler
-                        .send_message(WebsocketMessage::new(
-                            WebsocketEvent::TokenExpiring,
-                            [].into(),
-                        ))
+                        .send_message(
+                            WebsocketMessage::builder(WebsocketEvent::TokenExpiring).build(),
+                        )
                         .await;
 
                     tracing::debug!(

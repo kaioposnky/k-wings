@@ -276,10 +276,11 @@ impl Server {
                         None => break,
                     };
 
-                    let message = websocket::WebsocketMessage::new(
+                    let message = websocket::WebsocketMessage::builder(
                         websocket::WebsocketEvent::ServerStats,
-                        [serde_json::to_string(&usage).unwrap().into()].into(),
-                    );
+                    )
+                    .json_arg(usage)
+                    .build();
 
                     if let Err(err) = server.websocket.send(message) {
                         tracing::error!(
@@ -875,19 +876,25 @@ impl Server {
 
     pub fn log_daemon(&self, message: compact_str::CompactString) {
         self.websocket
-            .send(websocket::WebsocketMessage::new(
-                websocket::WebsocketEvent::ServerDaemonMessage,
-                [message].into(),
-            ))
+            .send(
+                websocket::WebsocketMessage::builder(
+                    websocket::WebsocketEvent::ServerDaemonMessage,
+                )
+                .arg(message)
+                .build(),
+            )
             .ok();
     }
 
     pub fn log_daemon_install(&self, message: compact_str::CompactString) {
         self.websocket
-            .send(websocket::WebsocketMessage::new(
-                websocket::WebsocketEvent::ServerInstallOutput,
-                [message].into(),
-            ))
+            .send(
+                websocket::WebsocketMessage::builder(
+                    websocket::WebsocketEvent::ServerInstallOutput,
+                )
+                .arg(message)
+                .build(),
+            )
             .ok();
     }
 
@@ -895,15 +902,17 @@ impl Server {
         let prelude = self.app_state.config.daemon_prelude();
 
         self.websocket
-            .send(websocket::WebsocketMessage::new(
-                websocket::WebsocketEvent::ServerConsoleOutput,
-                [compact_str::format_compact!(
+            .send(
+                websocket::WebsocketMessage::builder(
+                    websocket::WebsocketEvent::ServerConsoleOutput,
+                )
+                .arg(compact_str::format_compact!(
                     "{} {}",
                     prelude,
                     nu_ansi_term::Style::new().bold().paint(message)
-                )]
-                .into(),
-            ))
+                ))
+                .build(),
+            )
             .ok();
     }
 
@@ -918,15 +927,15 @@ impl Server {
     }
 
     pub fn get_daemon_error(&self, message: &str) -> websocket::WebsocketMessage {
-        websocket::WebsocketMessage::new(
-            websocket::WebsocketEvent::ServerDaemonMessage,
-            [nu_ansi_term::Style::new()
-                .bold()
-                .on(nu_ansi_term::Color::Red)
-                .paint(message)
-                .to_compact_string()]
-            .into(),
-        )
+        websocket::WebsocketMessage::builder(websocket::WebsocketEvent::ServerDaemonMessage)
+            .arg(
+                nu_ansi_term::Style::new()
+                    .bold()
+                    .on(nu_ansi_term::Color::Red)
+                    .paint(message)
+                    .to_compact_string(),
+            )
+            .build()
     }
 
     pub async fn start(

@@ -798,10 +798,13 @@ mod post {
                                     server.transferring.store(false, Ordering::SeqCst);
                                     server
                                         .websocket
-                                        .send(crate::server::websocket::WebsocketMessage::new(
-                                            crate::server::websocket::WebsocketEvent::ServerTransferStatus,
-                                            ["completed".into()].into(),
-                                        ))
+                                        .send(
+                                            crate::server::websocket::WebsocketMessage::builder(
+                                                crate::server::websocket::WebsocketEvent::ServerTransferStatus,
+                                            )
+                                            .arg("completed")
+                                            .build(),
+                                        )
                                         .ok();
                                     result_tx.send(true).ok();
                                 } else {
@@ -854,10 +857,13 @@ mod post {
                                     server.transferring.store(false, Ordering::SeqCst);
                                     server
                                         .websocket
-                                        .send(crate::server::websocket::WebsocketMessage::new(
-                                            crate::server::websocket::WebsocketEvent::ServerTransferStatus,
-                                            ["completed".into()].into(),
-                                        ))
+                                        .send(
+                                            crate::server::websocket::WebsocketMessage::builder(
+                                                crate::server::websocket::WebsocketEvent::ServerTransferStatus,
+                                            )
+                                            .arg("completed")
+                                            .build(),
+                                        )
                                         .ok();
                                     result_tx.send(true).ok();
                                 } else {

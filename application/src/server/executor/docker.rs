@@ -45,7 +45,7 @@ trait DockerServerConfigurationExt {
         config: &crate::config::Config,
         client: &bollard::Docker,
         filesystem: &crate::server::filesystem::Filesystem,
-    ) -> bollard::plugin::ContainerCreateBody;
+    ) -> Result<bollard::plugin::ContainerCreateBody, anyhow::Error>;
     fn container_update_config(
         &self,
         config: &crate::config::Config,
@@ -170,7 +170,7 @@ impl DockerServerConfigurationExt for crate::server::configuration::ServerConfig
         config: &crate::config::Config,
         client: &bollard::Docker,
         filesystem: &crate::server::filesystem::Filesystem,
-    ) -> bollard::plugin::ContainerCreateBody {
+    ) -> Result<bollard::plugin::ContainerCreateBody, anyhow::Error> {
         let mut labels = self.labels.clone();
         labels.insert("Service".into(), config.load().app_name.clone());
         labels.insert("ContainerType".into(), "server_process".into());
@@ -227,12 +227,11 @@ impl DockerServerConfigurationExt for crate::server::configuration::ServerConfig
                         &self.container.seccomp.remove_allowed,
                         crate::server::configuration::seccomp::Action::Allow,
                     )
-                    .to_string()
-                    .unwrap(),
+                    .to_string()?,
             );
         }
 
-        bollard::plugin::ContainerCreateBody {
+        Ok(bollard::plugin::ContainerCreateBody {
             exposed_ports: Some(self.convert_allocations_exposed()),
             host_config: Some(bollard::plugin::HostConfig {
                 memory: resources.memory,
@@ -312,7 +311,7 @@ impl DockerServerConfigurationExt for crate::server::configuration::ServerConfig
             open_stdin: Some(true),
             tty: Some(true),
             ..Default::default()
-        }
+        })
     }
 
     fn container_update_config(
@@ -422,20 +421,18 @@ impl DockerExecutor {
                                 if let Some(ref detail) = info.progress_detail {
                                     server
                                         .websocket
-                                        .send(super::super::websocket::WebsocketMessage::new(
-                                            super::super::websocket::WebsocketEvent::ServerImagePullProgress,
-                                            [
-                                                id.clone().into(),
-                                                serde_json::to_string(&crate::models::PullProgress {
-                                                    status: crate::models::PullProgressStatus::Pulling,
-                                                    progress: detail.current.unwrap_or_default(),
-                                                    total: detail.total.unwrap_or_default(),
-                                                })
-                                                .unwrap()
-                                                .into(),
-                                            ]
-                                            .into(),
-                                        ))
+                                        .send(
+                                            super::super::websocket::WebsocketMessage::builder(
+                                                super::super::websocket::WebsocketEvent::ServerImagePullProgress,
+                                            )
+                                            .arg(id.clone())
+                                            .json_arg(crate::models::PullProgress {
+                                                status: crate::models::PullProgressStatus::Pulling,
+                                                progress: detail.current.unwrap_or_default(),
+                                                total: detail.total.unwrap_or_default(),
+                                            })
+                                            .build(),
+                                        )
                                         .ok();
                                 }
                             }
@@ -443,30 +440,31 @@ impl DockerExecutor {
                                 if let Some(ref detail) = info.progress_detail {
                                     server
                                         .websocket
-                                        .send(super::super::websocket::WebsocketMessage::new(
-                                            super::super::websocket::WebsocketEvent::ServerImagePullProgress,
-                                            [
-                                                id.clone().into(),
-                                                serde_json::to_string(&crate::models::PullProgress {
-                                                    status: crate::models::PullProgressStatus::Extracting,
-                                                    progress: detail.current.unwrap_or_default(),
-                                                    total: detail.total.unwrap_or_default(),
-                                                })
-                                                .unwrap()
-                                                .into(),
-                                            ]
-                                            .into(),
-                                        ))
+                                        .send(
+                                            super::super::websocket::WebsocketMessage::builder(
+                                                super::super::websocket::WebsocketEvent::ServerImagePullProgress,
+                                            )
+                                            .arg(id.clone())
+                                            .json_arg(crate::models::PullProgress {
+                                                status: crate::models::PullProgressStatus::Extracting,
+                                                progress: detail.current.unwrap_or_default(),
+                                                total: detail.total.unwrap_or_default(),
+                                            })
+                                            .build(),
+                                        )
                                         .ok();
                                 }
                             }
                             Some("pull complete") => {
                                 server
                                     .websocket
-                                    .send(super::super::websocket::WebsocketMessage::new(
-                                        super::super::websocket::WebsocketEvent::ServerImagePullCompleted,
-                                        [id.clone().into()].into(),
-                                    ))
+                                    .send(
+                                        super::super::websocket::WebsocketMessage::builder(
+                                            super::super::websocket::WebsocketEvent::ServerImagePullCompleted,
+                                        )
+                                        .arg(id.clone())
+                                        .build(),
+                                    )
                                     .ok();
                             }
                             _ => {}
@@ -1177,7 +1175,7 @@ impl super::ServerExecutor for DockerExecutor {
             .read()
             .await
             .container_config(&self.app_config, &self.docker, &server.filesystem)
-            .await;
+            .await?;
 
         let container = self
             .docker

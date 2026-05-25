@@ -66,7 +66,7 @@ pub async fn get_repository(
             })
             .await?,
         );
-        repository.save().unwrap();
+        repository.save()?;
         *REPOSITORY.write().await = Some(Arc::clone(&repository));
 
         Ok(repository)

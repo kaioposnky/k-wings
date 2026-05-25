@@ -146,10 +146,11 @@ pub async fn handle_ws(
                             );
 
                             websocket_handler.send_message(
-                                websocket::WebsocketMessage::new(
+                                websocket::WebsocketMessage::builder(
                                     websocket::WebsocketEvent::JwtError,
-                                    [err.to_compact_string()].into(),
-                                ),
+                                )
+                                .arg(err.to_compact_string())
+                                .build(),
                             )
                             .await;
                         }
@@ -161,10 +162,11 @@ pub async fn handle_ws(
                             );
 
                             websocket_handler.send_message(
-                                websocket::WebsocketMessage::new(
+                                websocket::WebsocketMessage::builder(
                                     websocket::WebsocketEvent::JwtError,
-                                    [err.to_compact_string()].into(),
-                                ),
+                                )
+                                .arg(err.to_compact_string())
+                                .build(),
                             )
                             .await;
                         }
@@ -243,10 +245,11 @@ pub async fn handle_ws(
                                             );
 
                                             websocket_handler.send_message(
-                                                websocket::WebsocketMessage::new(
+                                                websocket::WebsocketMessage::builder(
                                                     websocket::WebsocketEvent::JwtError,
-                                                    [err.to_compact_string()].into(),
-                                                ),
+                                                )
+                                                .arg(err.to_compact_string())
+                                                .build(),
                                             )
                                             .await;
                                         }
@@ -342,10 +345,11 @@ pub async fn handle_ws(
                                         }
 
                                         websocket_handler.send_message(
-                                            websocket::WebsocketMessage::new(
+                                            websocket::WebsocketMessage::builder(
                                                 websocket::WebsocketEvent::ServerConsoleOutput,
-                                                [stdout.to_compact_string()].into(),
-                                            ),
+                                            )
+                                            .arg(stdout.to_compact_string())
+                                            .build(),
                                         )
                                         .await;
                                     }

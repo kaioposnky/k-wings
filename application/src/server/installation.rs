@@ -135,12 +135,13 @@ impl ServerInstaller {
             );
         }
 
-        self.server
-            .websocket
-            .send(super::websocket::WebsocketMessage::new(
+        self.server.websocket.send(
+            super::websocket::WebsocketMessage::builder(
                 super::websocket::WebsocketEvent::ServerInstallCompleted,
-                [successful.to_compact_string()].into(),
-            ))?;
+            )
+            .arg(successful.to_compact_string())
+            .build(),
+        )?;
 
         if successful
             && !self.reinstall
@@ -173,12 +174,12 @@ impl ServerInstaller {
         }
 
         self.server.installing.store(true, Ordering::SeqCst);
-        self.server
-            .websocket
-            .send(super::websocket::WebsocketMessage::new(
+        self.server.websocket.send(
+            super::websocket::WebsocketMessage::builder(
                 super::websocket::WebsocketEvent::ServerInstallStarted,
-                [].into(),
-            ))?;
+            )
+            .build(),
+        )?;
 
         tracing::info!(
             server = %self.server.uuid,
@@ -319,10 +320,13 @@ impl ServerInstaller {
                                                         installer
                                                             .server
                                                             .websocket
-                                                            .send(super::websocket::WebsocketMessage::new(
-                                                                super::websocket::WebsocketEvent::ServerInstallOutput,
-                                                                [line.to_compact_string()].into(),
-                                                            ))
+                                                            .send(
+                                                                super::websocket::WebsocketMessage::builder(
+                                                                    super::websocket::WebsocketEvent::ServerInstallOutput,
+                                                                )
+                                                                .arg(line.to_compact_string())
+                                                                .build(),
+                                                            )
                                                             .ok();
                                                     }
                                                     Err(tokio::sync::broadcast::error::RecvError::Closed) => break,
@@ -334,10 +338,13 @@ impl ServerInstaller {
                                                     installer
                                                         .server
                                                         .websocket
-                                                        .send(super::websocket::WebsocketMessage::new(
-                                                            super::websocket::WebsocketEvent::ServerStats,
-                                                            [serde_json::to_string(&usage).unwrap().into()].into(),
-                                                        ))
+                                                        .send(
+                                                            super::websocket::WebsocketMessage::builder(
+                                                                super::websocket::WebsocketEvent::ServerStats,
+                                                            )
+                                                            .json_arg(usage)
+                                                            .build(),
+                                                        )
                                                         .ok();
                                                 }
                                             }
@@ -392,12 +399,12 @@ impl ServerInstaller {
 
     pub async fn attach(self: &mut Arc<Self>) -> Result<(), anyhow::Error> {
         self.server.installing.store(true, Ordering::SeqCst);
-        self.server
-            .websocket
-            .send(super::websocket::WebsocketMessage::new(
+        self.server.websocket.send(
+            super::websocket::WebsocketMessage::builder(
                 super::websocket::WebsocketEvent::ServerInstallStarted,
-                [].into(),
-            ))?;
+            )
+            .build(),
+        )?;
 
         tokio::spawn({
             let installer = Arc::clone(self);
@@ -467,14 +474,17 @@ impl ServerInstaller {
                                             result = stdout_rx.recv() => {
                                                 match result {
                                                     Ok(line) => {
-                                                        installer
-                                                            .server
-                                                            .websocket
-                                                            .send(super::websocket::WebsocketMessage::new(
+                                                    installer
+                                                        .server
+                                                        .websocket
+                                                        .send(
+                                                            super::websocket::WebsocketMessage::builder(
                                                                 super::websocket::WebsocketEvent::ServerInstallOutput,
-                                                                [line.to_compact_string()].into(),
-                                                            ))
-                                                            .ok();
+                                                            )
+                                                            .arg(line.to_compact_string())
+                                                            .build(),
+                                                        )
+                                                        .ok();
                                                     }
                                                     Err(tokio::sync::broadcast::error::RecvError::Closed) => break,
                                                     Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => {}

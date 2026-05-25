@@ -211,10 +211,13 @@ impl OutgoingServerTransfer {
 
         server
             .websocket
-            .send(super::websocket::WebsocketMessage::new(
-                super::websocket::WebsocketEvent::ServerTransferLogs,
-                [compact_str::format_compact!("{prelude} {message}")].into(),
-            ))
+            .send(
+                super::websocket::WebsocketMessage::builder(
+                    super::websocket::WebsocketEvent::ServerTransferLogs,
+                )
+                .arg(compact_str::format_compact!("{prelude} {message}"))
+                .build(),
+            )
             .ok();
     }
 
@@ -231,10 +234,13 @@ impl OutgoingServerTransfer {
         server.transferring.store(false, Ordering::SeqCst);
         server
             .websocket
-            .send(super::websocket::WebsocketMessage::new(
-                super::websocket::WebsocketEvent::ServerTransferStatus,
-                ["failure".into()].into(),
-            ))
+            .send(
+                super::websocket::WebsocketMessage::builder(
+                    super::websocket::WebsocketEvent::ServerTransferStatus,
+                )
+                .arg("failure")
+                .build(),
+            )
             .ok();
     }
 
@@ -279,10 +285,13 @@ impl OutgoingServerTransfer {
             Self::log(&server, "Preparing to stream server data to destination...");
             server
                 .websocket
-                .send(super::websocket::WebsocketMessage::new(
-                    super::websocket::WebsocketEvent::ServerTransferStatus,
-                    ["processing".into()].into(),
-                ))
+                .send(
+                    super::websocket::WebsocketMessage::builder(
+                        super::websocket::WebsocketEvent::ServerTransferStatus,
+                    )
+                    .arg("processing")
+                    .build(),
+                )
                 .ok();
 
             let (files_sender, files_receiver) = async_channel::bounded(512 * (1 + multiplex_streams));
@@ -418,7 +427,7 @@ impl OutgoingServerTransfer {
                     ))
                     .file_name(format!("archive.{}", archive_format.extension()))
                     .mime_str("application/x-tar")
-                    .unwrap(),
+                    .expect("failed to set mime type for archive"),
                 )
                 .part(
                     "checksum",
@@ -427,7 +436,7 @@ impl OutgoingServerTransfer {
                     ))
                     .file_name("checksum")
                     .mime_str("text/plain")
-                    .unwrap(),
+                    .expect("failed to set mime type for checksum"),
                 );
 
             bytes_total.store(server.filesystem.get_logical_cached_size(), Ordering::Relaxed);
@@ -448,7 +457,7 @@ impl OutgoingServerTransfer {
                     ))
                     .file_name("install.log")
                     .mime_str("text/plain")
-                    .unwrap(),
+                    .expect("failed to set mime type for install logs"),
                 );
             }
 
@@ -512,7 +521,7 @@ impl OutgoingServerTransfer {
                                     ))
                                     .file_name(file_name.file_name().unwrap_or_default().to_string_lossy().to_string())
                                     .mime_str("backup/wings")
-                                    .unwrap(),
+                                    .expect("failed to set mime type for archive"),
                                 )
                                 .part(
                                     format!("backup-checksum-{}", backup.uuid()),
@@ -521,7 +530,7 @@ impl OutgoingServerTransfer {
                                     ))
                                     .file_name(format!("backup-checksum-{}", backup.uuid()))
                                     .mime_str("text/plain")
-                                    .unwrap(),
+                                    .expect("failed to set mime type for checksum"),
                                 );
                         }
                         _ => {
@@ -663,17 +672,17 @@ impl OutgoingServerTransfer {
 
                         server
                             .websocket
-                            .send(super::websocket::WebsocketMessage::new(
-                                super::websocket::WebsocketEvent::ServerTransferProgress,
-                                [serde_json::to_string(&crate::models::TransferProgress {
+                            .send(
+                                super::websocket::WebsocketMessage::builder(
+                                    super::websocket::WebsocketEvent::ServerTransferProgress,
+                                )
+                                .json_arg(crate::models::TransferProgress {
                                     archive_progress: current_bytes_archived,
                                     network_progress: current_bytes_sent,
-                                    total: bytes_total
+                                    total: bytes_total,
                                 })
-                                .unwrap()
-                                .into()]
-                                .into(),
-                            ))
+                                .build(),
+                            )
                             .ok();
 
                         tracing::debug!(
@@ -697,7 +706,7 @@ impl OutgoingServerTransfer {
                 .connect_timeout(std::time::Duration::from_secs(15))
                 .tcp_keepalive(Some(std::time::Duration::from_secs(30)))
                 .build()
-                .unwrap()
+                .expect("failed to build HTTP client")
                 .post(&url)
                 .header("Authorization", &token)
                 .header("Multiplex-Stream-Count", multiplex_streams)
@@ -751,7 +760,7 @@ impl OutgoingServerTransfer {
                         ))
                         .file_name(format!("archive.{}", archive_format.extension()))
                         .mime_str("application/x-tar")
-                        .unwrap(),
+                        .expect("failed to set mime type for archive"),
                     )
                     .part(
                         "checksum",
@@ -760,7 +769,7 @@ impl OutgoingServerTransfer {
                         ))
                         .file_name("checksum")
                         .mime_str("text/plain")
-                        .unwrap(),
+                        .expect("failed to set mime type for checksum"),
                     );
 
                 multiplex_responses.push(
@@ -768,7 +777,7 @@ impl OutgoingServerTransfer {
                         .connect_timeout(std::time::Duration::from_secs(15))
                         .tcp_keepalive(Some(std::time::Duration::from_secs(30)))
                         .build()
-                        .unwrap()
+                        .expect("failed to build HTTP client")
                         .post(&url)
                         .header("Authorization", &token)
                         .header("Multiplex-Stream", i)
@@ -858,10 +867,13 @@ impl OutgoingServerTransfer {
 
                 server
                     .websocket
-                    .send(super::websocket::WebsocketMessage::new(
-                        super::websocket::WebsocketEvent::ServerTransferStatus,
-                        ["completed".into()].into(),
-                    ))
+                    .send(
+                        super::websocket::WebsocketMessage::builder(
+                            super::websocket::WebsocketEvent::ServerTransferStatus,
+                        )
+                        .arg("completed")
+                        .build(),
+                    )
                     .ok();
                 server.user_permissions.clear_permissions().await;
             });

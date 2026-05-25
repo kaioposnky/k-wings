@@ -17,6 +17,13 @@ use std::{
 use tokio::io::{AsyncReadExt, AsyncSeekExt};
 use tokio_util::bytes::BufMut;
 
+fn map_ser_err(err: impl Into<russh_sftp::client::error::Error>) -> StatusCode {
+    let err = err.into();
+    tracing::error!("russh serialization error: {}", err);
+
+    StatusCode::Failure
+}
+
 pub async fn handle_extended(
     sftp_session: &mut super::SftpSession,
     id: u32,
@@ -269,7 +276,7 @@ pub async fn handle_extended(
                             hash_algorithm,
                             hash,
                         })
-                        .unwrap()
+                        .map_err(map_ser_err)?
                         .into(),
                     },
                 ))
@@ -438,7 +445,7 @@ pub async fn handle_extended(
                         total_user_space: total_space,
                         available_user_space: free_space,
                     })
-                    .unwrap()
+                    .map_err(map_ser_err)?
                     .into(),
                 },
             ))
@@ -461,7 +468,7 @@ pub async fn handle_extended(
                         max_write_length: 128 * 1024,
                         max_handle_count: super::HANDLE_LIMIT as u64,
                     })
-                    .unwrap()
+                    .map_err(map_ser_err)?
                     .into(),
                 },
             ))
@@ -531,7 +538,7 @@ pub async fn handle_extended(
                         mount_flags: sftp_session.state.config.load().system.sftp.read_only as u64,
                         max_filename_length: 255,
                     })
-                    .unwrap()
+                    .map_err(map_ser_err)?
                     .into(),
                 },
             ))
@@ -774,7 +781,7 @@ pub async fn handle_extended(
                         users: users.into(),
                         groups: groups.into(),
                     })
-                    .unwrap()
+                    .map_err(map_ser_err)?
                     .into(),
                 },
             ))

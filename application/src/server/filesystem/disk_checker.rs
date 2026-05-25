@@ -50,7 +50,7 @@ pub async fn run(ctx: DiskCheckerContext) {
             .disk_check_concurrency_semaphore
             .acquire()
             .await
-            .unwrap();
+            .expect("failed to acquire disk check concurrency semaphore");
 
         let run_inner = async |paths_to_scan: Option<Vec<PathBuf>>| -> Result<(), anyhow::Error> {
             tracing::debug!(

@@ -155,14 +155,14 @@ impl OperationManager {
                 let progress_task = async {
                     loop {
                         sender
-                            .send(crate::server::websocket::WebsocketMessage::new(
-                                crate::server::websocket::WebsocketEvent::ServerOperationProgress,
-                                [
-                                    operation_uuid.to_compact_string(),
-                                    serde_json::to_string(&operation).unwrap().into(),
-                                ]
-                                .into(),
-                            ))
+                            .send(
+                                crate::server::websocket::WebsocketMessage::builder(
+                                    crate::server::websocket::WebsocketEvent::ServerOperationProgress,
+                                )
+                                .arg(operation_uuid.to_compact_string())
+                                .json_arg(&operation)
+                                .build(),
+                            )
                             .ok();
 
                         tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
@@ -204,17 +204,24 @@ impl OperationManager {
                     };
 
                     sender
-                        .send(crate::server::websocket::WebsocketMessage::new(
-                            crate::server::websocket::WebsocketEvent::ServerOperationError,
-                            [operation_uuid.to_compact_string(), message.into()].into(),
-                        ))
+                        .send(
+                            crate::server::websocket::WebsocketMessage::builder(
+                                crate::server::websocket::WebsocketEvent::ServerOperationError,
+                            )
+                            .arg(operation_uuid.to_compact_string())
+                            .arg(message)
+                            .build(),
+                        )
                         .ok();
                 } else {
                     sender
-                        .send(crate::server::websocket::WebsocketMessage::new(
-                            crate::server::websocket::WebsocketEvent::ServerOperationCompleted,
-                            [operation_uuid.to_compact_string()].into(),
-                        ))
+                        .send(
+                            crate::server::websocket::WebsocketMessage::builder(
+                                crate::server::websocket::WebsocketEvent::ServerOperationCompleted,
+                            )
+                            .arg(operation_uuid.to_compact_string())
+                            .build(),
+                        )
                         .ok();
                 }
 

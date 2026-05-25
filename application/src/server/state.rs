@@ -64,10 +64,13 @@ impl ServerStateLock {
             .await;
 
         self.sender
-            .send(super::websocket::WebsocketMessage::new(
-                super::websocket::WebsocketEvent::ServerStatus,
-                [state.to_str().into()].into(),
-            ))
+            .send(
+                super::websocket::WebsocketMessage::builder(
+                    super::websocket::WebsocketEvent::ServerStatus,
+                )
+                .arg(state.to_str())
+                .build(),
+            )
             .unwrap_or_default();
         if state == ServerState::Offline && self.get_pending_restart() {
             self.set_pending_restart(false);
@@ -81,10 +84,13 @@ impl ServerStateLock {
 
         self.pending_restart.store(pending, Ordering::Relaxed);
         self.sender
-            .send(super::websocket::WebsocketMessage::new(
-                super::websocket::WebsocketEvent::ServerPendingRestart,
-                [pending.to_compact_string()].into(),
-            ))
+            .send(
+                super::websocket::WebsocketMessage::builder(
+                    super::websocket::WebsocketEvent::ServerPendingRestart,
+                )
+                .arg(pending.to_compact_string())
+                .build(),
+            )
             .ok();
     }
 
