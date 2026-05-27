@@ -74,9 +74,6 @@ jobs:
         with:
           path: dist
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
@@ -89,21 +86,32 @@ jobs:
 
       - name: Prepare binaries
         run: |
-          mkdir -p .docker/amd64 .docker/arm64 .docker/riscv64 .docker/ppc64le .docker/s390x
+          mkdir -p .docker/amd64
           cp dist/${{ env.PROJECT_NAME }}-x86_64-linux/${{ env.BIN_NAME }}-x86_64-linux .docker/amd64/k-wings
-
-          chmod +x .docker/*/k-wings
+          chmod +x .docker/amd64/k-wings
 
       - name: Extract version
         id: version
         run: echo "val=$(cargo metadata --format-version=1 --no-deps | jq -r '.packages[0].version')" >> $GITHUB_OUTPUT
 
-      - name: Build & push multi-arch image (main)
+      - name: Build & push image (main)
+        if: github.ref == 'refs/heads/main'
         uses: docker/build-push-action@v5
         with:
           context: .
-          platforms: linux/amd64,linux/arm64,linux/riscv64,linux/ppc64le
+          platforms: linux/amd64
           push: true
-          tags: ghcr.io/${{ github.repository }}:nightly
+          tags: ghcr.io/${{ env.REPO_NAME }}:latest,ghcr.io/${{ env.REPO_NAME }}:nightly,ghcr.io/${{ env.REPO_NAME }}:${{ steps.version.outputs.val }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build & push image (nightly)
+        if: github.ref == 'refs/heads/nightly'
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64
+          push: true
+          tags: ghcr.io/${{ env.REPO_NAME }}:nightly
           cache-from: type=gha
           cache-to: type=gha,mode=max
