@@ -1,7 +1,6 @@
 use anyhow::{Context, Result};
 use rand::Rng;
 use std::path::{Path, PathBuf};
-use std::time::Instant;
 
 use crate::server::Server;
 use crate::server::bedrock::services::utilities::{self, BEDROCK_IGNORED_FOLDERS};
@@ -26,7 +25,6 @@ pub async fn install_package(
     let rand_suffix: u64 = rand::rng().random_range(1..99999999);
     let temp_folder_name = format!("{}-{}", TEMP_FOLDER, rand_suffix);
     let temp_path = root.join(&temp_folder_name);
-    let start = Instant::now();
 
     let result = async {
         writable_fs
@@ -37,14 +35,26 @@ pub async fn install_package(
         let file_name: String;
 
         if let Some(ref download_url) = package.download_url {
-            file_name = format!("{}.mcaddon", package.name);
+            let sanitized_name: String = package.name
+                .replace('/', "-")
+                .replace('\\', "-")
+                .chars()
+                .filter(|c| !c.is_control())
+                .collect();
+            file_name = format!("{}.mcaddon", sanitized_name);
             let bytes =
                 crate::server::bedrock::services::file_upload::download_file_from_url(download_url)
                     .await?;
             let dest = temp_path.join(&file_name);
             utilities::write_file(writable_fs, &dest, &bytes).await?;
         } else {
-            file_name = package.name.clone();
+            let sanitized_name: String = package.name
+                .replace('/', "-")
+                .replace('\\', "-")
+                .chars()
+                .filter(|c| !c.is_control())
+                .collect();
+            file_name = sanitized_name.clone();
             let src = root.join(&file_name);
             let dst = temp_path.join(&file_name);
             writable_fs
@@ -75,12 +85,15 @@ pub async fn install_package(
         )
         .await?;
 
-        for manifest_path in &manifest_paths {
+        for (_, manifest_path) in manifest_paths.iter().enumerate() {
             let manifest_file = match utilities::read_file_to_string(filesystem, manifest_path)
                 .await
             {
-                Ok(content) => content,
-                Err(_) => {
+                Ok(content) => {
+                    content
+                },
+                Err(e) => {
+                    tracing::warn!("Failed to read manifest on first attempt: {:?}, retrying extraction", e);
                     if let Ok(archive) = Archive::open(server.clone(), archive_path.clone()).await {
                         archive.extract(temp_path.clone(), None, None).await.ok();
                     }
@@ -161,6 +174,7 @@ pub async fn install_package(
                     package_folder_name, manifest_info.pack_type, version_str
                 ));
 
+
             let _ = writable_fs.async_remove_dir_all(&dest_dir).await;
 
             writable_fs
@@ -181,8 +195,14 @@ pub async fn install_package(
     .await;
 
     let _ = writable_fs.async_remove_dir_all(&temp_path).await;
-    let elapsed = start.elapsed();
-    tracing::debug!("Package installation took {:.2}s", elapsed.as_secs_f64());
+
+    match &result {
+        Ok(_) => {}
+        Err(e) => {
+            tracing::error!("Installation FAILED: {}", e);
+            tracing::error!("=== INSTALL_PACKAGE END (ERROR) ===");
+        }
+    }
 
     result
 }
@@ -257,6 +277,7 @@ async fn get_manifests_from_package_files(
                 .chars()
                 .filter(|c| c.is_alphanumeric() || *c == '_' || *c == '-' || *c == '.')
                 .collect();
+
 
             if entry.mime == "application/zip"
                 || str_ends_with_multiple(name, &[".mcpack", ".mcaddon", ".zip"])
@@ -358,7 +379,9 @@ async fn add_pack_to_world_json(
     let path = root.join(world_path).join(json_filename);
     let content = utilities::read_file_to_string(filesystem, &path)
         .await
-        .unwrap_or_else(|_| "[]".to_string());
+        .unwrap_or_else(|_| {
+            "[]".to_string()
+        });
 
     #[derive(serde::Serialize, serde::Deserialize)]
     struct PackInfo {
