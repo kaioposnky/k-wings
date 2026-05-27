@@ -77,7 +77,7 @@ pub mod post {
                 .with_status(StatusCode::INTERNAL_SERVER_ERROR)
         })?;
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             message: "Package installed successfully".to_string(),
             manifests,
         })

@@ -53,7 +53,7 @@ pub mod post {
         .await
         .map_err(|e| ApiResponse::error(&format!("{}", e)).with_status(StatusCode::BAD_REQUEST))?;
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             message: "Pack order updated successfully".to_string(),
         })
         .ok()

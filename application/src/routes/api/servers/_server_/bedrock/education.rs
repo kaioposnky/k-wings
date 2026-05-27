@@ -32,7 +32,7 @@ pub mod get {
 
         let enabled = world_data::get_education_features_enabled(&data.root_tag);
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             message: "Education features status retrieved".to_string(),
             enabled,
         })
@@ -79,7 +79,7 @@ pub mod post {
             .await
             .map_err(|e| ApiResponse::error(&format!("Failed to save level.dat: {}", e)))?;
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             message: "Education features toggled".to_string(),
             enabled,
         })

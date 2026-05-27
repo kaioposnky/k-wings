@@ -26,7 +26,7 @@ pub mod get {
         {
             Ok(p) => p,
             Err(_) => {
-                return ApiResponse::json(Response {
+                return ApiResponse::new_serialized(Response {
                     message: "Packs not enabled".to_string(),
                     enabled: false,
                 })
@@ -37,7 +37,7 @@ pub mod get {
         let enabled =
             world_packages::server_packs_enabled(filesystem.as_ref(), &root, &world_path).await;
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             message: "Check completed".to_string(),
             enabled,
         })

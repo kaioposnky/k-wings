@@ -1,5 +1,4 @@
 use anyhow::{Context, Result};
-use rand::Rng;
 use std::path::{Path, PathBuf};
 
 use crate::server::Server;
@@ -22,7 +21,7 @@ pub async fn install_package(
     package: &Package,
 ) -> Result<Vec<ManifestInfo>> {
     let mut manifests = Vec::new();
-    let rand_suffix: u64 = rand::rng().random_range(1..99999999);
+    let rand_suffix: u64 = rand::random_range(1..99999999);
     let temp_folder_name = format!("{}-{}", TEMP_FOLDER, rand_suffix);
     let temp_path = root.join(&temp_folder_name);
 
@@ -136,7 +135,7 @@ pub async fn install_package(
                 .to_path_buf();
 
             let origin_entries = filesystem
-                .async_read_dir(&origin_dir, None, 1, Default::default())
+                .async_read_dir(&origin_dir, None, 1, Default::default(), Default::default())
                 .await
                 .map(|l| l.entries)
                 .unwrap_or_default();
@@ -216,7 +215,7 @@ async fn get_manifests_from_package_files(
     manifest_paths: &mut Vec<PathBuf>,
 ) -> Result<()> {
     let listing = filesystem
-        .async_read_dir(&path, None, 1, Default::default())
+        .async_read_dir(&path, None, 1, Default::default(), Default::default())
         .await
         .context("Failed to list package directory")?;
 

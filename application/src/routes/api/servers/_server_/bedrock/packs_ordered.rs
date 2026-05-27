@@ -36,7 +36,7 @@ pub mod get {
                 .await
                 .map_err(|e| ApiResponse::error(&format!("Failed to get ordered packs: {}", e)))?;
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             message: "Ordered packs retrieved successfully".to_string(),
             data: result,
         })

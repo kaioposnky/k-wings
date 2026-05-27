@@ -227,7 +227,7 @@ async fn get_server_pack_manifests(
     let pack_type_path = root.join(world_path).join(pack_type);
 
     let listing = filesystem
-        .async_read_dir(&pack_type_path, None, 1, Default::default())
+        .async_read_dir(&pack_type_path, None, 1, Default::default(), Default::default())
         .await
         .context("Failed to list pack directory")?;
 
@@ -238,7 +238,7 @@ async fn get_server_pack_manifests(
             let folder_path = pack_type_path.join(entry.name.as_str());
 
             let folder_listing = match filesystem
-                .async_read_dir(&folder_path, None, 1, Default::default())
+                .async_read_dir(&folder_path, None, 1, Default::default(), Default::default())
                 .await
             {
                 Ok(l) => l,

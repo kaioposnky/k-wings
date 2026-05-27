@@ -35,7 +35,7 @@ pub mod get {
 
         let experiments = world_data::get_experiments(&data.root_tag);
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             message: "Experiments retrieved successfully".to_string(),
             experiments,
         })
@@ -86,7 +86,7 @@ pub mod post {
             .await
             .map_err(|e| ApiResponse::error(&format!("Failed to save level.dat: {}", e)))?;
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             message: "Experiments updated successfully".to_string(),
             updated,
         })

@@ -37,13 +37,13 @@ pub mod get {
                 .await;
 
         match result {
-            Some(manifest) => ApiResponse::json(Response {
+            Some(manifest) => ApiResponse::new_serialized(Response {
                 message: "Packages manifest retrieved successfully".to_string(),
                 behaviors: manifest.behaviors,
                 resources: manifest.resources,
             })
             .ok(),
-            None => ApiResponse::json(Response {
+            None => ApiResponse::new_serialized(Response {
                 message: "No packages found".to_string(),
                 behaviors: vec![],
                 resources: vec![],

@@ -32,7 +32,7 @@ pub mod get {
 
         let version = world_data::get_world_version(&data.root_tag);
 
-        ApiResponse::json(Response {
+        ApiResponse::new_serialized(Response {
             message: "Version retrieved successfully".to_string(),
             version,
         })
