@@ -96,7 +96,9 @@ async fn get_default_world_folder_from_properties(
         if let Some(m) = caps.get(1) {
             let name = m.as_str().trim();
             if !name.is_empty() {
-                return Ok(name.to_string());
+                // Remove barras invertidas do nome do mundo
+                let clean_name = name.replace('\\', "");
+                return Ok(clean_name);
             }
         }
     }
