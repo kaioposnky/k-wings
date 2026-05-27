@@ -15,7 +15,8 @@ use std::{
 use tracing::level_filters::LevelFilter;
 use tracing_subscriber::{
     fmt::writer::MakeWriterExt,
-    layer::{Layered, SubscriberExt}, util::SubscriberInitExt,
+    layer::{Layered, SubscriberExt},
+    util::SubscriberInitExt,
 };
 use utoipa::ToSchema;
 
@@ -1402,6 +1403,11 @@ impl Config {
                         "refusing to use user with UID or GID of 0 (root), please check your wings config and change system.username to a non-root user or disable rootless mode"
                     ));
                 }
+
+                cfg.docker.userns_mode = format!(
+                    "keep-id:uid={},gid={}",
+                    cfg.system.user.rootless.container_uid, cfg.system.user.rootless.container_gid
+                );
 
                 return Ok(());
             }
