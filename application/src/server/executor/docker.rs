@@ -415,6 +415,7 @@ impl DockerExecutor {
         while let Some(status) = stream.next().await {
             match status {
                 Ok(info) => {
+                    println!("{:?}", info);
                     if let Some(id) = &info.id {
                         match info.status.as_deref().map(str::to_lowercase).as_deref() {
                             Some("downloading") => {
@@ -455,7 +456,7 @@ impl DockerExecutor {
                                         .ok();
                                 }
                             }
-                            Some("pull complete") => {
+                            Some("download complete") | Some("pull complete") => {
                                 server
                                     .websocket
                                     .send(

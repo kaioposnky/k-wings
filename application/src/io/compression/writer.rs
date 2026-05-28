@@ -36,7 +36,7 @@ impl<'a, W: Write + Send + 'static> CompressionWriter<'a, W> {
                         let mut options =
                             lzma_rust2::XzOptions::with_preset(compression_level.to_xz_level());
                         options.set_block_size(Some(unsafe {
-                            std::num::NonZeroU64::new_unchecked(32 * 1024)
+                            std::num::NonZeroU64::new_unchecked(128 * 1024)
                         }));
 
                         options
@@ -52,7 +52,7 @@ impl<'a, W: Write + Send + 'static> CompressionWriter<'a, W> {
                         let mut options =
                             lzma_rust2::LzipOptions::with_preset(compression_level.to_lzip_level());
                         options.set_member_size(Some(unsafe {
-                            std::num::NonZeroU64::new_unchecked(32 * 1024)
+                            std::num::NonZeroU64::new_unchecked(128 * 1024)
                         }));
 
                         options
