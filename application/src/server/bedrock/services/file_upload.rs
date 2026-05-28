@@ -62,6 +62,7 @@ pub async fn download_file_from_url(url: &str) -> Result<Vec<u8>> {
     Err(last_error.unwrap_or_else(|| anyhow::anyhow!("Download failed after all retries")))
 }
 
+#[allow(dead_code)]
 pub async fn download_and_write_to_server(
     writable_fs: &dyn VirtualWritableFilesystem,
     url: &str,

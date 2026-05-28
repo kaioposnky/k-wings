@@ -2,12 +2,14 @@ use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+#[allow(dead_code)]
 pub struct BedrockVersion {
     pub major: i32,
     pub minor: i32,
     pub patch: i32,
 }
 
+#[allow(dead_code)]
 impl BedrockVersion {
     pub fn from_string(version_str: &str) -> Option<Self> {
         let parts: Vec<&str> = version_str.split('.').collect();
