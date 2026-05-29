@@ -31,12 +31,13 @@ debug = false
 
 [profile.release.package."*"]
 opt-level = "s"
-codegen-units = 1
+codegen-units = 16
 strip = true
 
 [profile.release]
-opt-level = "s"
-lto = "fat"
-codegen-units = 1
+opt-level = 3
+lto = "thin"
+codegen-units = 16
 strip = true
 panic = "abort"
+split-debuginfo = "packed"
