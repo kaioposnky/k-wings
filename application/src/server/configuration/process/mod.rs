@@ -1,4 +1,3 @@
-use anyhow::Context;
 use compact_str::ToCompactString;
 use serde::Deserialize;
 use serde_default::DefaultFromSerde;
@@ -234,31 +233,22 @@ impl ServerConfigurationFile {
         config: &crate::config::Config,
         parts: &[&str],
     ) -> Result<compact_str::CompactString, anyhow::Error> {
-        if parts.is_empty() || parts[0] == "token_id" || parts[0] == "token" {
-            return Ok(compact_str::CompactString::default());
-        }
-
-        let config_json = serde_json::to_value(&**config.load())
-            .context("failed to serialize Wings configuration")?;
-
-        let mut current = &config_json;
-        for part in parts {
-            match current.get(part) {
-                Some(value) => current = value,
-                None => {
-                    tracing::warn!("config path not found: {}", parts.join("."));
-                    return Ok(compact_str::CompactString::default());
-                }
+        // Only a strict whitelist of scalar configuration values may be
+        // templated into server configuration files. Serializing the full Wings
+        // configuration would leak secrets such as the panel token, TLS keys,
+        // and the remote URL/headers. This mirrors the upstream fix that
+        // restricts egg templating to the Docker interface only.
+        let value = match parts {
+            ["docker", "interface"] | ["docker", "network", "interface"] => {
+                config.load().docker.network.interface.clone()
             }
-        }
+            _ => {
+                tracing::warn!("config path not allowed: {}", parts.join("."));
+                String::new()
+            }
+        };
 
-        Ok(match current {
-            serde_json::Value::String(s) => s.to_compact_string(),
-            serde_json::Value::Number(n) => n.to_compact_string(),
-            serde_json::Value::Bool(b) => b.to_compact_string(),
-            serde_json::Value::Null => compact_str::CompactString::default(),
-            _ => current.to_compact_string(),
-        })
+        Ok(value.into())
     }
 
     async fn replace_all_placeholders(
