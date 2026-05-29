@@ -18,22 +18,10 @@ jobs:
       matrix:
         build:
           - x86_64-linux
-          - aarch64-linux
-          - riscv64-linux
-          - ppc64le-linux
         include:
           - build: x86_64-linux
             os: ubuntu-24.04
             target: x86_64-unknown-linux-musl
-          - build: aarch64-linux
-            os: ubuntu-24.04
-            target: aarch64-unknown-linux-musl
-          - build: riscv64-linux
-            os: ubuntu-24.04
-            target: riscv64gc-unknown-linux-gnu
-          - build: ppc64le-linux
-            os: ubuntu-24.04
-            target: powerpc64le-unknown-linux-gnu
 
     steps:
       - name: Checkout sources
@@ -137,11 +125,8 @@ jobs:
 
       - name: Prepare binaries
         run: |
-          mkdir -p .docker/amd64 .docker/arm64 .docker/riscv64 .docker/ppc64le
+          mkdir -p .docker/amd64
           cp dist/${{ env.PROJECT_NAME }}-x86_64-linux/${{ env.BIN_NAME }}-x86_64-linux .docker/amd64/calagopus-wings
-          cp dist/${{ env.PROJECT_NAME }}-aarch64-linux/${{ env.BIN_NAME }}-aarch64-linux .docker/arm64/calagopus-wings
-          cp dist/${{ env.PROJECT_NAME }}-riscv64-linux/${{ env.BIN_NAME }}-riscv64-linux .docker/riscv64/calagopus-wings
-          cp dist/${{ env.PROJECT_NAME }}-ppc64le-linux/${{ env.BIN_NAME }}-ppc64le-linux .docker/ppc64le/calagopus-wings
 
           chmod +x .docker/*/calagopus-wings
 
@@ -170,7 +155,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          platforms: linux/amd64,linux/arm64,linux/riscv64,linux/ppc64le
+          platforms: linux/amd64
           push: true
           tags: ${{ env.DOCKER_TAGS }}
           cache-from: type=gha
