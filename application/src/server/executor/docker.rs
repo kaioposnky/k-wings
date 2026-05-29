@@ -586,7 +586,6 @@ struct DockerProcessHandle {
     state_task: tokio::task::JoinHandle<()>,
     stats_task: tokio::task::JoinHandle<()>,
     stdin_task: tokio::task::JoinHandle<()>,
-    stdout_task: tokio::task::JoinHandle<()>,
 }
 
 impl DockerProcessHandle {
@@ -636,7 +635,8 @@ impl DockerProcessHandle {
             }
         });
 
-        let stdout_task = tokio::spawn({
+        // intentionally not aborted on drop so that it can finish writing any remaining logs to the channel
+        tokio::spawn({
             let server = server.clone();
             let app_config = Arc::clone(&app_config);
 
@@ -936,7 +936,6 @@ impl DockerProcessHandle {
             state_task,
             stats_task,
             stdin_task,
-            stdout_task,
         })
     }
 }
@@ -946,7 +945,6 @@ impl Drop for DockerProcessHandle {
         self.state_task.abort();
         self.stats_task.abort();
         self.stdin_task.abort();
-        self.stdout_task.abort();
     }
 }
 

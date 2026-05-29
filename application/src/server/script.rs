@@ -14,7 +14,7 @@ pub async fn script_server(
         .context("Failed to setup script process")?;
 
     let mut stdout_rx = handle
-        .subscribe_stdout_lines_ratelimited()
+        .subscribe_stdout_lines()
         .await
         .context("Failed to subscribe to stdout")?;
 
@@ -39,7 +39,10 @@ pub async fn script_server(
                         break;
                     }
                 }
-                Err(tokio::sync::broadcast::error::RecvError::Closed) => break,
+                Err(tokio::sync::broadcast::error::RecvError::Closed) => {
+                    buf_stdout_tx.shutdown().await.ok();
+                    break;
+                }
                 Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => {}
             }
         }
