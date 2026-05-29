@@ -54,51 +54,25 @@ impl BasePayload {
     ) -> Result<(), JwtValidateError> {
         let now = chrono::Utc::now().timestamp();
 
-        tracing::info!(
-            "Validating JWT: jti={}, scope={:?}, payload_scope={}, iat={:?}, now={}, boot_time={}",
-            self.jwt_id,
-            scope,
-            self.scope,
-            self.issued_at,
-            now,
-            client.boot_time.timestamp()
-        );
-
         if let Some(exp) = self.expiration_time {
             if exp < now {
-                tracing::warn!("JWT validation failed: token expired. exp={}, now={}", exp, now);
                 return Err(JwtValidateError::Expired);
             }
         } else {
-            tracing::warn!("JWT validation failed: missing expiration_time");
             return Err(JwtValidateError::Expired);
         }
 
         if let Some(nbf) = self.not_before
             && nbf > now
         {
-            tracing::warn!("JWT validation failed: token not yet valid. nbf={}, now={}", nbf, now);
             return Err(JwtValidateError::NotYetValid);
         }
 
         if let Some(iat) = self.issued_at {
             if iat - 5 > now || iat < client.boot_time.timestamp() - 120 {
-                tracing::warn!(
-                    "JWT validation failed: invalid issued_at. iat={}, now={}, boot_time={}",
-                    iat,
-                    now,
-                    client.boot_time.timestamp()
-                );
                 return Err(JwtValidateError::InvalidIssuedAt);
             }
-            if iat < client.boot_time.timestamp() {
-                tracing::warn!(
-                    "JWT issued_at ({iat}) is before Wings boot_time ({}), indicating a possible clock skew between the Panel and Wings. Please synchronize system times.",
-                    client.boot_time.timestamp()
-                );
-            }
         } else {
-            tracing::warn!("JWT validation failed: missing issued_at");
             return Err(JwtValidateError::InvalidIssuedAt);
         }
 
@@ -106,11 +80,6 @@ impl BasePayload {
             && let Some(issued) = self.issued_at
             && issued < expired_until.timestamp()
         {
-            tracing::warn!(
-                "JWT validation failed: token is on denylist. jti={}, expired_until={:?}",
-                self.jwt_id,
-                expired_until
-            );
             return Err(JwtValidateError::Denied);
         }
 
@@ -118,15 +87,9 @@ impl BasePayload {
             && !self.scope.is_empty()
             && self.scope != scope
         {
-            tracing::warn!(
-                "JWT validation failed: scope mismatch. expected={:?}, got={}",
-                scope,
-                self.scope
-            );
             return Err(JwtValidateError::Denied);
         }
 
-        tracing::info!("JWT validation succeeded: jti={}", self.jwt_id);
         Ok(())
     }
 }
