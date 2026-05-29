@@ -1034,9 +1034,18 @@ pub struct ConfigGuard(
 
 pub type ConfigSnapshot = arc_swap::Guard<Arc<InnerConfig>>;
 type ReloadHandle = tracing_subscriber::reload::Handle<
-    LevelFilter,
+    tracing_subscriber::filter::Targets,
     Layered<LevelFilter, tracing_subscriber::Registry>,
 >;
+
+/// Builds the runtime-reloadable log filter: `base` for everything, but the
+/// `bollard` Docker client is capped at WARN so its per-second stats/inspect
+/// debug spam never reaches the logs even when wings runs in debug mode.
+fn build_log_filter(base: LevelFilter) -> tracing_subscriber::filter::Targets {
+    tracing_subscriber::filter::Targets::new()
+        .with_default(base)
+        .with_target("bollard", LevelFilter::WARN)
+}
 
 pub struct Config {
     inner: ArcSwap<InnerConfig>,
@@ -1103,7 +1112,7 @@ impl Config {
             LevelFilter::INFO
         };
         let (reload_layer, log_reload_handle) =
-            tracing_subscriber::reload::Layer::new(initial_level);
+            tracing_subscriber::reload::Layer::new(build_log_filter(initial_level));
 
         let fmt_layer = tracing_subscriber::fmt::layer()
             .with_timer(tracing_subscriber::fmt::time::ChronoLocal::new(
@@ -1163,7 +1172,7 @@ impl Config {
             };
 
             self.log_reload_handle
-                .modify(|filter| *filter = new_level)
+                .modify(|filter| *filter = build_log_filter(new_level))
                 .context("failed to reload tracing level filter")?;
         }
 

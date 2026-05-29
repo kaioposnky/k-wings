@@ -6,7 +6,7 @@ edition = "2024"
 
 [dependencies]
 unrar = { path = "../unrar-rs" }
-tracing = { version = "0.1.41", features = ["max_level_debug"] }
+tracing = { version = "0.1.41" }
 tracing-subscriber = { version = "0.3.19", features = ["chrono"] }
 tracing-appender = "0.2.3"
 anyhow = { workspace = true }
