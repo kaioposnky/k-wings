@@ -1,3 +1,4 @@
 target/
 config*.yml
 /build-local.sh
+.claude/
